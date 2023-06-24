@@ -2,7 +2,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
-// #include <PubSubClient.h>
+// #include <PubSubClient.h
 #include <SimpleDHT.h>
 #include "CTBot.h"
 
@@ -187,7 +187,7 @@ void loop()
   //   // client.connect(macAddress.c_str());
   //    client.connect("ESP8266Client");
   // }
-  
+
   now = millis();
   if (now - lastMeasure > 5000)
   {
