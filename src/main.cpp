@@ -3,15 +3,15 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 // #include <PubSubClient.h>
-#include "CTBot.h"
 #include <SimpleDHT.h>
+#include "CTBot.h"
 
 CTBot myBot;
 
-const char *ssid = "";      // silakan disesuaikan sendiri
-const char *password = ""; // silakan disesuaikan sendiri
-String token = "6285468497:AAED8SfbFd6r53smkn4iPNpP-bRQWhAp0pA";
-const int id = 6197329807;
+const char *ssid = "OPPO A83";      // silakan disesuaikan sendiri
+const char *password = "andre1998"; // silakan disesuaikan sendiri
+String token = "6260854611:AAHF1_emZvedLUosSylKjN86kamJV4yy4F0";
+const int id = 1193715803;
 
 // const char *mqtt_server = ""; // isikan server broker
 
@@ -25,7 +25,7 @@ const int id = 6197329807;
 #define RED_LED D5   // led warna merah
 #define GREEN_LED D6 // led warna hijau
 #define BLUE_LED D7  // led warnah biru
-#define buzzer D3
+#define buzzer D2
 
 // MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, sensorMQ2, type);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -92,7 +92,7 @@ void setup()
     Serial.println("Koneksi Jelek");
   }
   Wire.begin();
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("Mqtt Node-RED");
   setup_wifi();
   // client.setServer(mqtt_server, 1883);
@@ -121,7 +121,7 @@ void scrollText(int row, String message, int delayTime, int lcdColumns)
     message = " " + message;
   }
   message = message + " ";
-  for (int pos = 0; pos < message.length(); pos++)
+  for (unsigned int pos = 0; pos < message.length(); pos++)
   {
     lcd.setCursor(0, row);
     lcd.print(message.substring(pos, pos + lcdColumns));
@@ -145,7 +145,7 @@ void loop()
   Serial.println(gas);
   // delay(1000);
 
-  if (gas <= 300)
+  if (gas <= 150)
   {
     Serial.println("Gas dalam kondisi aman!");
     digitalWrite(RED_LED, LOW);
@@ -156,18 +156,18 @@ void loop()
     // delay(1000);
   }
 
-  if (300 < gas && gas <= 500)
+  else if (gas > 150 && gas <= 300)
   {
     Serial.println("Terdeteksi adanya kebocoran gas!");
     digitalWrite(RED_LED, LOW);
     digitalWrite(GREEN_LED, LOW);
     digitalWrite(BLUE_LED, HIGH);
-    tone(buzzer, 370);
+    tone(buzzer, 150);
     myBot.sendMessage(id, "Terdeteksi adanya kebocoran gas!");
     // delay(1000);
   }
 
-  if (gas > 500)
+  else if (gas > 300)
   {
     Serial.println("Kebocoran gas darurat!");
     digitalWrite(RED_LED, HIGH);
@@ -187,6 +187,7 @@ void loop()
   //   // client.connect(macAddress.c_str());
   //    client.connect("ESP8266Client");
   // }
+  
   now = millis();
   if (now - lastMeasure > 5000)
   {
@@ -225,7 +226,7 @@ void loop()
   }
 
   // lcd.setCursor(0, 0);
-  scrollText(0, "Alat Pendeteksi Kebocoran Gas", 220, 16);
+  scrollText(0, "Alat Pendeteksi Kebocoran Gas", 100, 16);
 
   lcd.clear();
   lcd.setCursor(0, 1);
