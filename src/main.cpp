@@ -2,18 +2,24 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
-// #include <PubSubClient.h
+#include <PubSubClient.h> // NodeRED Publish & Subscribe
 #include <SimpleDHT.h>
 #include "CTBot.h"
 
 CTBot myBot;
 
-const char *ssid = "OPPO A83";      // silakan disesuaikan sendiri
-const char *password = "andre1998"; // silakan disesuaikan sendiri
+// Wifi Kampus
+// const char *ssid = "JTI-POLINEMA";      // silakan disesuaikan sendiri
+// const char *password = "jtifast!"; // silakan disesuaikan sendiri
+
+// Wifi Faiq
+const char *ssid = "halo";      // silakan disesuaikan sendiri
+const char *password = "sasasyifa"; // silakan disesuaikan sendiri
+
 String token = "6260854611:AAHF1_emZvedLUosSylKjN86kamJV4yy4F0";
 const int id = 1193715803;
 
-// const char *mqtt_server = ""; // isikan server broker
+const char *mqtt_server = "broker.hivemq.com"; // isikan server broker
 
 #define Board "Arduino"
 #define Voltage_Resolution 5
@@ -31,7 +37,7 @@ const int id = 1193715803;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 WiFiClient espClient;
-// PubSubClient client(espClient);
+PubSubClient client(espClient); // NodeRED pubsub client
 SimpleDHT11 dht11(D0);
 
 long now = millis();
@@ -59,24 +65,25 @@ void setup_wifi()
   Serial.print(WiFi.macAddress());
 }
 
-// void reconnect()
-// {
-//   while (!client.connected())
-//   {
-//     Serial.print("Attempting MQTT connection...");
-//     if (client.connect(macAddress.c_str()))
-//     {
-//       Serial.println("connected");
-//     }
-//     else
-//     {
-//       Serial.print("failed, rc=");
-//       Serial.print(client.state());
-//       Serial.println(" try again in 5 seconds");
-//       delay(5000);
-//     }
-//   }
-// }
+// NodeRED reconnect
+void reconnect()
+{
+  while (!client.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect(macAddress.c_str()))
+    {
+      Serial.println("connected");
+    }
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 
 void setup()
 {
@@ -95,7 +102,7 @@ void setup()
   Serial.begin(9600);
   Serial.println("Mqtt Node-RED");
   setup_wifi();
-  // client.setServer(mqtt_server, 1883);
+  client.setServer(mqtt_server, 1883); // NodeRED set MQTT server
   pinMode(RED_LED, OUTPUT); // atur pin-pin digital sebagai output
   pinMode(GREEN_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
@@ -140,7 +147,9 @@ void scrollText(int row, String message, int delayTime, int lcdColumns)
 
 void loop()
 {
+  static char gasChar[8];
   // gas = analogRead(sensorMQ2);
+  dtostrf(gas, 4, 2, gasChar);
   Serial.print("Nilai Sensor : ");
   Serial.println(gas);
   // delay(1000);
@@ -153,6 +162,7 @@ void loop()
     digitalWrite(BLUE_LED, LOW);
     noTone(buzzer);
     myBot.sendMessage(id, "Ruangan dalam kondisi aman!");
+    client.publish("projectiot/gas", gasChar);
     // delay(1000);
   }
 
@@ -164,6 +174,7 @@ void loop()
     digitalWrite(BLUE_LED, HIGH);
     tone(buzzer, 150);
     myBot.sendMessage(id, "Terdeteksi adanya kebocoran gas!");
+    client.publish("projectiot/gas", gasChar);
     // delay(1000);
   }
 
@@ -175,18 +186,19 @@ void loop()
     digitalWrite(BLUE_LED, LOW);
     tone(buzzer, 500);
     myBot.sendMessage(id, "Kebocoran gas darurat!");
+    client.publish("projectiot/gas", gasChar);
     // delay(1000);
   }
 
-  // if (!client.connected())
-  // {
-  //   reconnect();
-  // }
-  // if (!client.loop())
-  // {
-  //   // client.connect(macAddress.c_str());
-  //    client.connect("ESP8266Client");
-  // }
+  if (!client.connected())
+  {
+    reconnect();
+  }
+  if (!client.loop())
+  {
+    client.connect(macAddress.c_str());
+    //client.connect("ESP8266Client");
+  }
 
   now = millis();
   if (now - lastMeasure > 5000)
@@ -206,23 +218,25 @@ void loop()
       return;
     }
     // instansiasi variabel char
-    static char temperatureTemp[7];
-    static char humidityHum[7];
-    static char damp[8];
+    // static char temperatureTemp[7];
+    // static char humidityHum[7];
+    //static char gasChar[8];
 
     // Convert
-    dtostrf(humidity, 1, 2, humidityHum);
-    dtostrf(temperature, 4, 2, temperatureTemp);
-    dtostrf(gas, 4, 2, damp);
+    // dtostrf(humidity, 1, 2, humidityHum);
+    // dtostrf(temperature, 4, 2, temperatureTemp);
+    //dtostrf(gas, 4, 2, gasChar);
 
-    Serial.println(temperatureTemp);
-    Serial.println(humidityHum);
-    Serial.println(damp);
+    // Serial.println(temperatureTemp);
+    // Serial.println(humidityHum);
+    //Serial.println(gasChar);
 
-    // Publish hasil output dari tiap sensor berdasarkan topic
+    // Publish output dengan Topic
+
     // client.publish("1941720043/room/humidity", humidityHum);
     // client.publish("1941720043/room/suhu", temperatureTemp);
     // client.publish("1941720043/room/damp", damp);
+    //client.publish("projectiot/gas", gasChar);
   }
 
   // lcd.setCursor(0, 0);
